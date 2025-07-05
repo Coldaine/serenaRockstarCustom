@@ -675,6 +675,26 @@ class CSharpLanguageServer(SolidLanguageServer):
             # Just acknowledge the request - we don't need to track these for now
             return
 
+        def handle_roslyn_project_needs_restore(params):
+            """Handle workspace/_roslyn_projectNeedsRestore requests."""
+            # This is a Microsoft-specific Roslyn extension to the LSP protocol
+            # It's used to notify the client that certain projects need NuGet package restoration
+            # Since Serena doesn't manage NuGet packages, we acknowledge but don't perform restoration
+            
+            project_paths = params if isinstance(params, list) else [params] if params else []
+            project_count = len(project_paths)
+            
+            if project_count > 0:
+                self.logger.log(
+                    f"Roslyn language server requested package restoration for {project_count} project(s). "
+                    f"This is normal for Unity projects with complex dependencies. "
+                    f"Serena doesn't manage NuGet packages, but C# language features will continue to work.",
+                    logging.WARNING
+                )
+            
+            # Return empty response to acknowledge the request
+            return None
+
         # Set up notification handlers
         self.server.on_notification("window/logMessage", window_log_message)
         self.server.on_notification("$/progress", handle_progress)
@@ -682,6 +702,7 @@ class CSharpLanguageServer(SolidLanguageServer):
         self.server.on_request("workspace/configuration", handle_workspace_configuration)
         self.server.on_request("window/workDoneProgress/create", handle_work_done_progress_create)
         self.server.on_request("client/registerCapability", handle_register_capability)
+        self.server.on_request("workspace/_roslyn_projectNeedsRestore", handle_roslyn_project_needs_restore)
 
         self.logger.log("Starting Microsoft.CodeAnalysis.LanguageServer process", logging.INFO)
 

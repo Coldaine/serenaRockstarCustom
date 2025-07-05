@@ -199,6 +199,7 @@ pylint.html
 # Serena-specific
 /*.yml
 !*.template.yml
+!serena_config.yml
 /agent-ui
 
 # dynamic LS installations
@@ -216,8 +217,42 @@ pylint.html
 
 tmp/
 
+# Serena project files - exclude most but keep essential configs
 .serena/
+# Allow specific important configuration files from .serena
+!.serena/project.yml
+# But exclude memory files and other dynamic content
+.serena/memories/
+.serena/cache/
+.serena/tmp/
+.serena/*.log
+.serena/*.tmp
 .vscode/
 
 # Claude settings
 .claude/settings.local.json
+
+# Additional cache and temporary files
+*.swp
+*.swo
+*~
+.*.swp
+.*.swo
+
+# IDE and editor files
+.vscode/settings.json
+.vscode/launch.json
+.vscode/tasks.json
+.vscode/c_cpp_properties.json
+.vscode/ipch/
+
+# OS generated files
+.DS_Store?
+ehthumbs.db
+Icon?
+Thumbs.db
+
+# Language server and indexing files
+.clangd/
+.ccls-cache/
+.lsp/

@@ -921,6 +921,13 @@ class WriteMemoryTool(Tool):
 
         This tool is either called during the onboarding process or when you have identified
         something worth remembering about the project from the past conversation.
+        
+        **Token Efficiency Guidelines:**
+        - Store high-level concepts, patterns, and relationships, not detailed code
+        - Focus on insights that would be expensive to rediscover
+        - Use references to files/symbols rather than including full implementations
+        - Avoid storing temporary or easily discoverable information
+        - Keep individual memories focused on single topics
         """
         if len(content) > max_answer_chars:
             raise ValueError(

@@ -609,6 +609,32 @@ Whenever Serena starts working on a project, the list of memories is
 provided, and the agent can decide to read them.
 We found that memories can significantly improve the user experience with Serena.
 
+#### Memory Optimization Guidelines
+
+To maximize the effectiveness of memories while maintaining token efficiency:
+
+**What to Store in Memories:**
+- High-level project architecture and design patterns
+- Key concepts, conventions, and coding standards
+- Important relationships between components
+- Configuration details and setup procedures
+- Lessons learned and common pitfalls
+- References to important files/symbols (rather than full code)
+
+**What NOT to Store in Memories:**
+- Complete code examples or large code blocks
+- Detailed implementation that can be found via semantic tools
+- Repetitive or easily discoverable information
+- Temporary debugging information
+- Full file contents that change frequently
+
+**Memory Creation Strategy:**
+- Create memories after significant discoveries or completed tasks
+- Focus on insights that would be expensive to rediscover
+- Use descriptive, searchable memory names
+- Keep individual memories focused on single topics
+- Regularly review and consolidate related memories
+
 
 ### Prepare Your Project
 
@@ -857,3 +883,4 @@ Here is the full list of Serena's tools with a short description (output of `uv 
  * `think_about_task_adherence`: Thinking tool for determining whether the agent is still on track with the current task.
  * `think_about_whether_you_are_done`: Thinking tool for determining whether the task is truly completed.
  * `write_memory`: Writes a named memory (for future reference) to Serena's project-specific memory store.
+

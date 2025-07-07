@@ -3,10 +3,10 @@ build-backend = "hatchling.build"
 requires = ["hatchling"]
 
 [project]
-name = "serena"
+name = "rockstar-serena"
 version = "0.1.0"
-description = ""
-authors = [{ name = "Oraios AI", email = "info@oraios-ai.de" }]
+description = "RockstarSerena: An AI-powered coding agent that provides semantic code analysis and editing capabilities through Language Server Protocol integration."
+authors = [{ name = "Coldaine", email = "coldaine@users.noreply.github.com" }]
 readme = "README.md"
 requires-python = ">=3.11, <3.12"
 classifiers = [
@@ -35,7 +35,8 @@ dependencies = [
 ]
 
 [project.scripts]
-serena-mcp-server = "serena.mcp:start_mcp_server"
+rockstar-serena-mcp-server = "serena.mcp:start_mcp_server"
+serena-mcp-server = "serena.mcp:start_mcp_server"  # Backward compatibility
 index-project = "serena.agent:index_project"
 
 [project.license]
@@ -60,7 +61,7 @@ anthropic = ["anthropic>=0.49.0"]
 google = ["google-genai>=1.8.0"]
 
 [project.urls]
-Homepage = "https://github.com/oraios/serena"
+Homepage = "https://github.com/Coldaine/rockstarSerena"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/serena", "src/interprompt", "src/solidlsp"]

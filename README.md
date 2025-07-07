@@ -3,19 +3,19 @@
   <img src="resources/serena-logo-dark-mode.svg#gh-dark-mode-only" style="width:500px">
 </p>
 
-* :rocket: Serena is a powerful **coding agent toolkit** capable of turning an LLM into a fully-featured agent that works **directly on your codebase**.
-* :wrench: Serena provides essential **semantic code retrieval and editing tools** that are akin to an IDE's capabilities, extracting code entities at the symbol level and exploiting relational structure.
-* :free: Serena is **free & open-source**, enhancing the capabilities of LLMs you already have access to free of charge.
+* :rocket: RockstarSerena is a powerful **coding agent toolkit** capable of turning an LLM into a fully-featured agent that works **directly on your codebase**.
+* :wrench: RockstarSerena provides essential **semantic code retrieval and editing tools** that are akin to an IDE's capabilities, extracting code entities at the symbol level and exploiting relational structure.
+* :free: RockstarSerena is **free & open-source**, enhancing the capabilities of LLMs you already have access to free of charge.
 
 ### Demonstration
 
-Here is a demonstration of Serena implementing a small feature for itself (a better log GUI) with Claude Desktop.
-Note how Serena's tools enable Claude to find and edit the right symbols.
+Here is a demonstration of RockstarSerena implementing a small feature for itself (a better log GUI) with Claude Desktop.
+Note how RockstarSerena's tools enable Claude to find and edit the right symbols.
 
 https://github.com/user-attachments/assets/6eaa9aa1-610d-4723-a2d6-bf1e487ba753
 
 <p align="center">
-  <em>Serena is under active development! See the latest updates, upcoming features, and lessons learned to stay up to date.</em>
+  <em>RockstarSerena is under active development! See the latest updates, upcoming features, and lessons learned to stay up to date.</em>
 </p>
 
 <p align="center">
@@ -97,7 +97,7 @@ implementation.
 - [What Can I Use Serena For?](#what-can-i-use-serena-for)
 - [Free Coding Agents with Serena](#free-coding-agents-with-serena)
 - [Quick Start](#quick-start)
-  * [Running the Serena MCP Server](#running-the-serena-mcp-server)
+  * [Running the RockstarSerena MCP Server](#running-the-rockstarserena-mcp-server)
     + [Usage](#usage)
         * [Local Installation](#local-installation)
       - [Using uvx](#using-uvx)
@@ -178,7 +178,7 @@ Serena can be used in various ways, below you will find instructions for selecte
 
 Serena is managed by `uv`, so you will need to [install it](https://docs.astral.sh/uv/getting-started/installation/)).
 
-### Running the Serena MCP Server
+### Running the RockstarSerena MCP Server
 
 You have several options for running the MCP server, which are explained in the subsections below.
 
@@ -198,8 +198,8 @@ This and other settings can be adjusted in the [configuration](#configuration) a
 
 1. Clone the repository and change into it.
    ```shell
-   git clone https://github.com/oraios/serena
-   cd serena
+   git clone https://github.com/Coldaine/rockstarSerena
+   cd rockstarSerena
    ```
 2. Optionally create the configuration file in your home directory, i.e.
 
@@ -214,11 +214,11 @@ This and other settings can be adjusted in the [configuration](#configuration) a
    If you just want the default config, you can skip this part, and a config file will be created when you first run Serena.
 3. Run the server with `uv`:
    ```shell
-   uv run serena-mcp-server
+   uv run rockstar-serena-mcp-server
    ```
-   When running from outside the serena installation directory, be sure to pass it, i.e. use
+   When running from outside the RockstarSerena installation directory, be sure to pass it, i.e. use
    ```shell
-    uv run --directory /abs/path/to/serena serena-mcp-server
+    uv run --directory /abs/path/to/rockstarSerena rockstar-serena-mcp-server
     ```
 
 ##### Using uvx
@@ -227,11 +227,11 @@ This and other settings can be adjusted in the [configuration](#configuration) a
 
 * Windows:
   ```shell
-  uvx --from git+https://github.com/oraios/serena serena-mcp-server.exe
+  uvx --from git+https://github.com/Coldaine/rockstarSerena rockstar-serena-mcp-server.exe
   ```
 * Other operating systems:
   ```shell
-  uvx --from git+https://github.com/oraios/serena serena-mcp-server
+  uvx --from git+https://github.com/Coldaine/rockstarSerena rockstar-serena-mcp-server
   ```
 
 ##### Using Docker (Experimental)
@@ -334,7 +334,7 @@ To do so, run one of these commands the project directory or pass the path to th
   ```
 * When using uvx:
   ```shell
-  uvx --from git+https://github.com/oraios/serena index-project
+  uvx --from git+https://github.com/Coldaine/rockstarSerena index-project
   ```
 
 ### Claude Code
@@ -350,7 +350,7 @@ claude mcp add serena -- <serena-mcp-server> --context ide-assistant --project $
 where `<serena-mcp-server>` is your way of [running the Serena MCP server](#running-the-serena-mcp-server).
 For example, when using `uvx`, you would run
 ```shell
-claude mcp add serena -- uvx --from git+https://github.com/oraios/serena serena-mcp-server --context ide-assistant --project $(pwd)
+claude mcp add rockstar-serena -- uvx --from git+https://github.com/Coldaine/rockstarSerena rockstar-serena-mcp-server --context ide-assistant --project $(pwd)
 ```
 
 ℹ️ Once in Claude Code, you should ask Claude to "Read the initial instructions" as your first prompt, such that it will receive information
@@ -362,15 +362,15 @@ such that Claude is correctly primed to use Serena's tools at all times.
 
 For [Claude Desktop](https://claude.ai/download) (available for Windows and macOS), go to File / Settings / Developer / MCP Servers / Edit Config,
 which will let you open the JSON file `claude_desktop_config.json`. 
-Add the `serena` MCP server configuration, using a [run command](#running-the-serena-mcp-server) depending on your setup.
+Add the `rockstar-serena` MCP server configuration, using a [run command](#running-the-rockstarserena-mcp-server) depending on your setup.
 
 * local installation:
    ```json
    {
        "mcpServers": {
-           "serena": {
+           "rockstar-serena": {
                "command": "/abs/path/to/uv",
-               "args": ["run", "--directory", "/abs/path/to/serena", "serena-mcp-server"]
+               "args": ["run", "--directory", "/abs/path/to/rockstarSerena", "rockstar-serena-mcp-server"]
            }
        }
    }
@@ -379,9 +379,9 @@ Add the `serena` MCP server configuration, using a [run command](#running-the-se
    ```json
    {
        "mcpServers": {
-           "serena": {
+           "rockstar-serena": {
                "command": "/abs/path/to/uvx",
-               "args": ["--from", "git+https://github.com/oraios/serena", "serena-mcp-server"]
+               "args": ["--from", "git+https://github.com/Coldaine/rockstarSerena", "rockstar-serena-mcp-server"]
            }
        }
   }
@@ -390,9 +390,9 @@ Add the `serena` MCP server configuration, using a [run command](#running-the-se
   ```json
    {
        "mcpServers": {
-           "serena": {
+           "rockstar-serena": {
                "command": "docker",
-               "args": ["run", "--rm", "-i", "--network", "host", "-v", "/path/to/your/projects:/workspaces/projects", "ghcr.io/oraios/serena:latest", "serena-mcp-server", "--transport", "stdio"]
+               "args": ["run", "--rm", "-i", "--network", "host", "-v", "/path/to/your/projects:/workspaces/projects", "ghcr.io/coldaine/rockstar-serena:latest", "rockstar-serena-mcp-server", "--transport", "stdio"]
            }
        }
    }

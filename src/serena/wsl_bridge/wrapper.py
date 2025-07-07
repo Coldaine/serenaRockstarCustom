@@ -18,6 +18,12 @@ from pathlib import Path
 from typing import Dict, Any, Optional
 import logging
 
+from .config import WSLBridgeConfig
+from .metrics import BridgeMetrics
+
+from .config import WSLBridgeConfig
+from .metrics import BridgeMetrics, MetricsContextManager
+
 
 class MCPWSLBridge:
     """WSL Bridge that forwards MCP communication between Claude Code and Windows Serena"""
@@ -31,9 +37,14 @@ class MCPWSLBridge:
         # Setup logging first
         self._setup_logging()
         
-        # Load configuration
-        self.config_path = config_path or self._get_default_config_path()
-        self.config = self._load_config()
+        # Initialize configuration and metrics
+        self.config_manager = WSLBridgeConfig(config_path)
+        self.config = self.config_manager.load()
+        self.metrics = BridgeMetrics()
+        
+        # Validate configuration
+        if not self.config_manager.validate():
+            self._log("Configuration validation failed, but continuing with current config")
         
         # Setup signal handlers for graceful shutdown
         signal.signal(signal.SIGTERM, self._signal_handler)

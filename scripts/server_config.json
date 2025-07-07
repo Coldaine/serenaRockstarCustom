@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "serena": {
+      "command": "E:\\_ProjectBroadside\\serena\\.venv\\Scripts\\python.exe",
+      "args": ["scripts/mcp_server.py", "--project", "E:\\_ProjectBroadside\\serena"],
+      "env": {
+        "PYTHONPATH": "E:\\_ProjectBroadside\\serena\\src",
+        "SERENA_LOG_LEVEL": "INFO"
+      },
+      "cwd": "E:\\_ProjectBroadside\\serena"
+    }
+  }
+}

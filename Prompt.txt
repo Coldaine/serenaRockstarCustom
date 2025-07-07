@@ -1,6 +1,10 @@
-Detailed Implementation Plan: Integrating WSL Bridge into Serena
-Phase 1: Package Structure Integration
+## Detailed Implementation Plan: Integrating WSL Bridge into Serena
+
+### Phase 1: Package Structure Integration
+
 Add the wrapper to your Serena fork:
+
+```
 serena/
 ├── src/
 │   └── serena/
@@ -14,52 +18,18 @@ serena/
 ├── scripts/
 │   └── serena-wsl-bridge       # Entry point script
 └── pyproject.toml               # Update with new entry point
-Phase 2: Implementation
-2.1 Core Wrapper with All EnhancementsSerena WSL Bridge - Complete ImplementationCode #!/usr/bin/env python3
-"""
-serena/src/serena/wsl_bridge/wrapper.py
+```
 
-MCP Stdio Wrapper for Serena on WSL
-Bridges Claude Code (in WSL) to Serena (on Windows) for fast file access
-"""
+### Phase 2: Implementation
 
-import sys
-import os
-import json
-import threading
-import subprocess
-Plotted implementation strategy for Serena package integration1sNow I need to provide the supporting files (config.py and metrics.py) and then the implementation plan phases.2.2 Configuration ModuleSerena WSL Bridge - Configuration ModuleCode """
-serena/src/serena/wsl_bridge/config.py
+#### 2.1 Core Wrapper with All Enhancements#### 2.2 Configuration Module#### 2.3 Metrics Module### Phase 3: Entry Point and Package Integration
 
-Configuration handling for Serena WSL Bridge
-"""
+#### 3.1 Update pyproject.toml
 
-import json
-import os
-from pathlib import Path
-from typing import Dict, Any, Optional
+Add the new entry point to your `pyproject.toml`:
 
-
-class BridgeConfig:
-    """Configuration for the WSL Bridge"""
-    
-Thought process1sNow I'll create the metrics module and then continue with the implementation plan phases.2.3 Metrics ModuleSerena WSL Bridge - Metrics ModuleCode """
-serena/src/serena/wsl_bridge/metrics.py
-
-Performance metrics tracking for Serena WSL Bridge
-"""
-
-import time
-from typing import Callable
-from collections import deque
-from datetime import datetime
-
-
-class PerformanceMetrics:
-    """Track performaPlotted implementation strategy with entry point and testing scripts.1sNow I'll create the rest of the implementation plan with entry point scripts and testing phases.Phase 3: Entry Point and Package Integration
-3.1 Update pyproject.toml
-Add the new entry point to your pyproject.toml:
-toml[project.scripts]
+```toml
+[project.scripts]
 serena-mcp-server = "serena.mcp_server:main"
 serena-wsl-bridge = "serena.wsl_bridge.wrapper:main"  # NEW
 
@@ -67,9 +37,14 @@ serena-wsl-bridge = "serena.wsl_bridge.wrapper:main"  # NEW
 wsl = [
     "pywin32 ; platform_system=='Windows'",  # For Windows process handling
 ]
-3.2 Create Setup Script
-Create scripts/setup-wsl-bridge.sh:
-bash#!/bin/bash
+```
+
+#### 3.2 Create Setup Script
+
+Create `scripts/setup-wsl-bridge.sh`:
+
+```bash
+#!/bin/bash
 # Setup script for Serena WSL Bridge
 
 echo "Setting up Serena WSL Bridge..."
@@ -101,9 +76,14 @@ EOF
 
 echo "Configuration created at ~/.config/serena/wsl_bridge.json"
 echo "Please edit this file to match your Windows Python installation path"
-Phase 4: Claude Code Integration
+```
+
+### Phase 4: Claude Code Integration
+
 Create a wrapper script for Claude Code configuration:
-bash#!/bin/bash
+
+```bash
+#!/bin/bash
 # scripts/configure-claude-code.sh
 
 CLAUDE_CONFIG=~/.claude.json
@@ -128,10 +108,16 @@ EOF
 
 echo "Add this to your Claude Code MCP servers configuration:"
 cat /tmp/serena_mcp_config.json
-Phase 5: Testing Plan
-5.1 Basic Functionality Test
-Create tests/test_wsl_bridge.py:
-python"""Test script for WSL Bridge functionality"""
+```
+
+### Phase 5: Testing Plan
+
+#### 5.1 Basic Functionality Test
+
+Create `tests/test_wsl_bridge.py`:
+
+```python
+"""Test script for WSL Bridge functionality"""
 
 import subprocess
 import json
@@ -275,9 +261,14 @@ if __name__ == "__main__":
     for name, result in results:
         status = "PASS" if result else "FAIL"
         print(f"{name}: {status}")
-5.2 Performance Comparison Test
-Create tests/benchmark_wsl_bridge.py:
-python"""Benchmark file access performance with and without the bridge"""
+```
+
+#### 5.2 Performance Comparison Test
+
+Create `tests/benchmark_wsl_bridge.py`:
+
+```python
+"""Benchmark file access performance with and without the bridge"""
 
 import time
 import subprocess
@@ -339,9 +330,14 @@ if __name__ == "__main__":
     
     speedup = wsl_stats['mean'] / win_stats['mean']
     print(f"\nSpeedup: {speedup:.1f}x")
-Phase 6: Documentation
-Create docs/wsl-bridge.md:
-markdown# Serena WSL Bridge
+```
+
+### Phase 6: Documentation
+
+Create `docs/wsl-bridge.md`:
+
+```markdown
+# Serena WSL Bridge
 
 The WSL Bridge enables fast file access for Serena when running with Claude Code on Windows via WSL.
 
@@ -361,32 +357,43 @@ The WSL Bridge acts as a transparent proxy:
 1. Install Serena with WSL support:
    ```bash
    pip install -e ".[wsl]"
+   ```
 
-Run the setup script:
-bash./scripts/setup-wsl-bridge.sh
+2. Run the setup script:
+   ```bash
+   ./scripts/setup-wsl-bridge.sh
+   ```
 
-Configure your Windows Python path in ~/.config/serena/wsl_bridge.json
-Update Claude Code configuration to use serena-wsl-bridge
+3. Configure your Windows Python path in `~/.config/serena/wsl_bridge.json`
 
-Configuration
+4. Update Claude Code configuration to use `serena-wsl-bridge`
+
+## Configuration
+
 Environment variables:
+- `SERENA_BRIDGE_DEBUG=1` - Enable debug logging
+- `SERENA_BRIDGE_MAX_RESTARTS=5` - Maximum server restart attempts
+- `SERENA_BRIDGE_TRANSLATE_PATHS=0` - Disable path translation
 
-SERENA_BRIDGE_DEBUG=1 - Enable debug logging
-SERENA_BRIDGE_MAX_RESTARTS=5 - Maximum server restart attempts
-SERENA_BRIDGE_TRANSLATE_PATHS=0 - Disable path translation
+## Performance
 
-Performance
 Typical improvements:
+- Unity .cs file reads: 50ms → 5ms (10x faster)
+- Large YAML files: 200ms → 15ms (13x faster)
+- Project scanning: 30s → 3s (10x faster)
 
-Unity .cs file reads: 50ms → 5ms (10x faster)
-Large YAML files: 200ms → 15ms (13x faster)
-Project scanning: 30s → 3s (10x faster)
+## Troubleshooting
 
-Troubleshooting
 Check bridge logs:
-bashtail -f /tmp/serena_bridge_*.log
+```bash
+tail -f /tmp/serena_bridge_*.log
+```
+
 Test Windows execution:
-bashpython tests/test_wsl_bridge.py
+```bash
+python tests/test_wsl_bridge.py
+```
+```
 
 ### Phase 7: Implementation Timeline
 

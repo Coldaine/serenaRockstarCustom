@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "serena": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--directory",
+        "e:\\_ProjectBroadside\\serena",
+        "rockstar-serena-mcp-server",
+        "--context",
+        "ide-assistant"
+      ]
+    }
+  }
+}

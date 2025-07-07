@@ -1,6 +1,6 @@
 [build-system]
 build-backend = "hatchling.build"
-requires = ["hatchling"]
+requires = ["hatchling>=1.21.0"]
 
 [project]
 name = "rockstar-serena"
@@ -8,10 +8,12 @@ version = "0.1.0"
 description = "RockstarSerena: An AI-powered coding agent that provides semantic code analysis and editing capabilities through Language Server Protocol integration."
 authors = [{ name = "Coldaine", email = "coldaine@users.noreply.github.com" }]
 readme = "README.md"
-requires-python = ">=3.11, <3.12"
+requires-python = ">=3.11"
 classifiers = [
   "License :: OSI Approved :: MIT License",
   "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12", 
+  "Programming Language :: Python :: 3.13",
 ]
 dependencies = [
   "requests>=2.32.3,<3",
@@ -110,6 +112,7 @@ PYDEVD_DISABLE_FILE_VALIDATION = "1"
 # For custom markers, one can either adjust the env var or just use -m option in the command line,
 # as the second -m option will override the first one.
 test = "pytest test -vv -m \"${PYTEST_MARKERS:-not java and not rust}\""
+test_integration = "pytest test -vv -m integration"
 _black_check = "black --check src scripts test"
 _ruff_check = "ruff check src scripts test"
 _black_format = "black src scripts test"
@@ -255,6 +258,7 @@ markers = [
   "elixir: language server running for Elixir",
   "terraform: language server running for Terraform",
   "snapshot: snapshot tests for symbolic editing operations",
+  "integration: integration tests for MCP server functionality",
 ]
 
 [tool.codespell]

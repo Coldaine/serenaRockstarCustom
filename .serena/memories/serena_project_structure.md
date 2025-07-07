@@ -1,8 +1,8 @@
-# Serena Project Structure Overview
+# Rockstar Serena Project Structure Overview
 
 ## Top-Level Organization
 
-Serena is organized into several key directories, each serving distinct architectural purposes:
+Rockstar Serena is organized into several key directories, each serving distinct architectural purposes:
 
 ```
 serena/
@@ -21,7 +21,7 @@ serena/
 ## Core Source Structure (`src/`)
 
 ### 1. **Serena Core (`src/serena/`)**
-The heart of the Serena system containing:
+The heart of the Rockstar Serena system containing:
 
 #### **Agent and Core Logic**
 - **`agent.py`**: Main `SerenaAgent` class, tool implementations, project management
@@ -170,4 +170,4 @@ Behavior mode definitions:
 - **File Operations**: `read_file`, `create_text_file`, `list_dir`
 - **Project Operations**: `search_for_pattern`, `get_symbols_overview`
 
-This structure reflects Serena's evolution from a complex, multi-process system to a streamlined, single-process architecture that maintains all semantic capabilities while improving performance and reliability.
+This structure reflects Rockstar Serena's evolution from a complex, multi-process system to a streamlined, single-process architecture that maintains all semantic capabilities while improving performance and reliability.

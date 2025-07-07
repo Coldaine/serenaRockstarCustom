@@ -63,7 +63,8 @@ class ProjectConfig(ToStringMixin):
     ignored_paths: list[str] = field(default_factory=list)
     excluded_tools: set[str] = field(default_factory=set)
     read_only: bool = False
-    ignore_all_files_in_gitignore: bool = True
+    ignore_all_files_in_gitignore: bool = False
+    first_time_setup: bool = True
     initial_prompt: str = ""
     encoding: str = DEFAULT_ENCODING
 
@@ -125,7 +126,8 @@ class ProjectConfig(ToStringMixin):
             ignored_paths=data.get("ignored_paths", []),
             excluded_tools=set(data.get("excluded_tools", [])),
             read_only=data.get("read_only", False),
-            ignore_all_files_in_gitignore=data.get("ignore_all_files_in_gitignore", True),
+            ignore_all_files_in_gitignore=data.get("ignore_all_files_in_gitignore", False),
+            first_time_setup=data.get("first_time_setup", False),
             initial_prompt=data.get("initial_prompt", ""),
             encoding=data.get("encoding", DEFAULT_ENCODING),
         )
@@ -150,6 +152,34 @@ class ProjectConfig(ToStringMixin):
 
     def get_excluded_tool_classes(self) -> set[type["Tool"]]:
         return set(ToolRegistry.get_tool_class_by_name(tool_name) for tool_name in self.excluded_tools)
+
+    def save(self, project_root: str | Path) -> None:
+        """
+        Save the project configuration to disk.
+        
+        :param project_root: the path to the project root where the configuration should be saved
+        """
+        project_root = Path(project_root).resolve()
+        config_path = project_root / self.rel_path_to_project_yml()
+        
+        # Convert the instance to a dictionary for saving
+        config_dict = {
+            "project_name": self.project_name,
+            "language": self.language.value,
+            "ignored_paths": self.ignored_paths,
+            "excluded_tools": list(self.excluded_tools),
+            "read_only": self.read_only,
+            "ignore_all_files_in_gitignore": self.ignore_all_files_in_gitignore,
+            "first_time_setup": self.first_time_setup,
+            "initial_prompt": self.initial_prompt,
+            "encoding": self.encoding,
+        }
+        
+        # Ensure the directory exists
+        config_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        # Save to disk
+        save_yaml(str(config_path), config_dict, preserve_comments=True)
 
 
 @dataclass

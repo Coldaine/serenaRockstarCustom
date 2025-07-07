@@ -518,6 +518,13 @@ class SerenaAgent:
         new_project_config_generated = False
         project_instance: Project | None = self.serena_config.get_project(project_root_or_name)
         if project_instance is not None:
+            if project_instance.project_config.first_time_setup:
+                log.info("First time setup for project, configuring ignores...")
+                project_instance.project_config.first_time_setup = False
+                project_instance.project_config.save(project_instance.project_root)
+                log.info("Please restart Serena for the changes to take effect.")
+
+        if project_instance is not None:
             log.info(f"Found registered project {project_instance.project_name} at path {project_instance.project_root}.")
         else:
             if not os.path.isdir(project_root_or_name):

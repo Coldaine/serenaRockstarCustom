@@ -1102,8 +1102,7 @@ class SearchForPatternTool(Tool):
             file is passed, only that will be searched. The path must exist, otherwise a `FileNotFoundError` is raised.
         :param max_answer_chars: if the output is longer than this number of characters,
             no content will be returned. Don't adjust unless there is really no other way to get the content
-            required for the task. Instead, if the output is too long, you should
-            make a stricter query.
+            required for the task.
         :param restrict_search_to_code_files: whether to restrict the search to only those files where
             analyzed code symbols can be found. Otherwise, will search all non-ignored files.
             Set this to True if your search is only meant to discover code that can be manipulated with symbolic tools.
@@ -1225,7 +1224,37 @@ class ActivateProjectTool(Tool, ToolMarkerDoesNotRequireActiveProject):
             + "You should not read these memories directly, but rather use the `read_memory` tool to read them later if needed for the task."
         )
         result_str += f"\nAvailable tools:\n {json.dumps(self.agent.get_active_tool_names())}"
+
+        if active_project.project_config.first_time_setup:
+            result_str += """
+
+This project has not yet been configured with file/folder ignore patterns. As the agent, you are now tasked with proposing an initial set of ignore rules.
+
+1.  Inspect the project's top-level directory structure using the `list_dir` tool.
+2.  Based on the contents, identify common directories and files that should be ignored (e.g., `__pycache__`, `.venv`, `node_modules`, `build/`, `dist/`, `*.log`).
+3.  Present this list of suggested patterns to the user for confirmation.
+4.  Once the user approves, use the `configure_project_ignores` tool to save these patterns to the `ignore_patterns` setting."""
+
         return result_str
+
+
+class ConfigureProjectIgnoresTool(Tool):
+    """
+    Configures the project's ignore patterns.
+    """
+
+    def apply(self, patterns: list[str]) -> str:
+        """
+        Configures the project's ignore patterns.
+
+        :param patterns: a list of patterns to ignore
+        """
+        if self.agent.active_project is None:
+            raise SerenaConfigError("No active project.")
+        self.agent.active_project.project_config.ignored_paths = patterns
+        self.agent.active_project.project_config.first_time_setup = False
+        self.agent.active_project.project_config.save(self.agent.active_project.project_root)
+        return "Successfully configured project ignore patterns."
 
 
 class RemoveProjectTool(Tool, ToolMarkerDoesNotRequireActiveProject):

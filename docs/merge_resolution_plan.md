@@ -25,6 +25,12 @@
     *   **Step 2.2: Review `README.md`**
         *   No changes to `README.md`.
     *   Completed **Phase 2**.
+    *   Began **Phase 3: Finalize the Merge**.
+    *   **Step 3.1: Stage All Resolved Files**
+        *   Staged all resolved files.
+    *   **Step 3.2: Commit the Merge**
+        *   Committed the merge.
+    *   Completed **Phase 3**.
 
 ---
 

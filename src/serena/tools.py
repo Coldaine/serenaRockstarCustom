@@ -7,6 +7,7 @@ import json
 import os
 import platform
 import re
+import shutil
 import traceback
 from abc import ABC, abstractmethod
 from collections import defaultdict
@@ -1186,114 +1187,115 @@ class ExecuteShellCommandTool(Tool, ToolMarkerCanEdit):
         """
         _cwd = cwd or self.get_project_root()
         result = execute_shell_command(command, cwd=_cwd, capture_stderr=capture_stderr)
-        result = result.json()
         return self._limit_length(result, max_answer_chars)
 
 
-class ActivateProjectTool(Tool, ToolMarkerDoesNotRequireActiveProject):
+class MovePathsTool(Tool, ToolMarkerCanEdit):
     """
-    Activates a project by name.
+    Moves one or more files or directories to a new location within the project.
     """
 
-    def apply(self, project: str) -> str:
+    def apply(
+        self,
+        source_paths: list[str],
+        destination_path: str,
+        overwrite: bool = False,
+        dry_run: bool = False,
+    ) -> str:
         """
-        Activates the project with the given name.
+        Moves one or more files or directories to a new location within the project.
+        The operation is performed in two phases: first, all validations are run. If all validations pass,
+        the files are moved. If any validation fails, no files are moved.
+        Note: If the operation fails during the execution phase, the project may be left in a partially modified state.
 
-        :param project: the name of a registered project to activate or a path to a project directory
+        :param source_paths: A list of relative paths to the files or directories to be moved.
+        :param destination_path: The relative path to the destination directory.
+        :param overwrite: If False, the operation will fail if a file with the same name already exists
+                          at the destination. If True, existing files will be overwritten. Defaults to False.
+        :param dry_run: If True, performs all validations but does not move any files.
+                        Returns a report of what would have happened. Defaults to False.
+        :return: A JSON string reporting the overall status and the result of each planned move.
         """
-        from .config.serena_config import ProjectConfig
+        # --- Phase 1: Validation (Fail-Fast) ---
+        project_root = Path(self.get_project_root())
+        abs_destination_path = project_root / destination_path
 
-        active_project, new_project_generated, new_project_config_generated = self.agent.activate_project_from_path_or_name(project)
-        if new_project_generated:
-            result_str = (
-                f"Created and activated a new project with name {active_project.project_name} at {active_project.project_root}, language: {active_project.project_config.language.value}. "
-                + "You can activate this project later by name."
+        try:
+            # Empty input validation
+            if not source_paths:
+                raise ValueError("No source paths provided.")
+
+            # Validate destination path itself
+            self.agent.validate_relative_path(destination_path)
+            if abs_destination_path.exists() and not abs_destination_path.is_dir():
+                raise ValueError(f"Destination '{destination_path}' exists but is not a directory.")
+
+            # Validate all source paths and check for collisions
+            for source_path in source_paths:
+                self.agent.validate_relative_path(source_path)
+                abs_source_path = project_root / source_path
+
+                if not abs_source_path.exists():
+                    raise FileNotFoundError(f"Source path '{source_path}' does not exist.")
+
+                # Self-move detection
+                if abs_source_path.resolve() == abs_destination_path.resolve():
+                    raise ValueError(f"Source and destination path ('{source_path}') are the same.")
+
+                if abs_destination_path.resolve().is_relative_to(abs_source_path.resolve()):
+                    raise ValueError(f"Cannot move a directory ('{source_path}') into itself or a subdirectory.")
+
+                # Name collision check
+                destination_file_path = abs_destination_path / abs_source_path.name
+                if destination_file_path.exists() and not overwrite:
+                    raise FileExistsError(
+                        f"File '{abs_source_path.name}' already exists in destination '{destination_path}'. Use overwrite=True to replace it."
+                    )
+
+        except Exception as e:
+            return json.dumps({"status": "validation_failed", "error": str(e)})
+
+        # --- Dry Run Check ---
+        if dry_run:
+            return json.dumps(
+                {
+                    "status": "dry_run_success",
+                    "message": "All validations passed. No files were moved.",
+                }
             )
-        else:
-            result_str = f"Activated existing project with name {active_project.project_name} at {active_project.project_root}, language: {active_project.project_config.language.value}"
-        if new_project_config_generated:
-            result_str += (
-                f"\nNote: A new project configuration was autogenerated because the given path did not contain a {ProjectConfig.SERENA_DEFAULT_PROJECT_FILE} file."
-                + f"You can now edit the project configuration in the file {active_project.path_to_project_yml()}. In particular, you may want to edit the project name and the initial prompt."
+
+        # --- Phase 2: Execution (Continue-on-Error) ---
+        execution_results = []
+        try:
+            abs_destination_path.mkdir(parents=True, exist_ok=True)
+
+            for source_path in source_paths:
+                abs_source_path = project_root / source_path
+                try:
+                    # This is the actual move operation
+                    shutil.move(str(abs_source_path), str(abs_destination_path))
+
+                    self.agent.mark_file_modified(source_path)
+                    new_relative_path = (abs_destination_path / abs_source_path.name).relative_to(project_root)
+                    self.agent.mark_file_modified(str(new_relative_path))
+
+                    execution_results.append({"path": source_path, "status": "success"})
+                except Exception as move_error:
+                    execution_results.append({"path": source_path, "status": "error", "reason": str(move_error)})
+
+        except Exception as e:
+            return json.dumps(
+                {
+                    "status": "execution_failed",
+                    "error": f"A critical error occurred during the move process: {e}",
+                    "results": execution_results,
+                }
             )
 
-        if active_project.project_config.initial_prompt:
-            result_str += f"\nAdditional project information:\n {active_project.project_config.initial_prompt}"
-        result_str += (
-            f"\nAvailable memories:\n {json.dumps(list(self.memories_manager.list_memories()))}"
-            + "You should not read these memories directly, but rather use the `read_memory` tool to read them later if needed for the task."
-        )
-        result_str += f"\nAvailable tools:\n {json.dumps(self.agent.get_active_tool_names())}"
-
-        if active_project.project_config.first_time_setup:
-            result_str += """
-
-This project has not yet been configured with file/folder ignore patterns. As the agent, you are now tasked with proposing an initial set of ignore rules.
-
-1.  Inspect the project's top-level directory structure using the `list_dir` tool.
-2.  Based on the contents, identify common directories and files that should be ignored (e.g., `__pycache__`, `.venv`, `node_modules`, `build/`, `dist/`, `*.log`).
-3.  Present this list of suggested patterns to the user for confirmation.
-4.  Once the user approves, use the `configure_project_ignores` tool to save these patterns to the `ignore_patterns` setting."""
-
-        return result_str
+        return json.dumps({"status": "execution_success", "results": execution_results})
 
 
-class ConfigureProjectIgnoresTool(Tool):
-    """
-    Configures the project's ignore patterns.
-    """
-
-    def apply(self, patterns: list[str]) -> str:
-        """
-        Configures the project's ignore patterns.
-
-        :param patterns: a list of patterns to ignore
-        """
-        if self.agent.active_project is None:
-            raise SerenaConfigError("No active project.")
-        self.agent.active_project.project_config.ignored_paths = patterns
-        self.agent.active_project.project_config.first_time_setup = False
-        self.agent.active_project.project_config.save(self.agent.active_project.project_root)
-        return "Successfully configured project ignore patterns."
-
-
-class RemoveProjectTool(Tool, ToolMarkerDoesNotRequireActiveProject):
-    """
-    Removes a project from the Serena configuration.
-    """
-
-    def apply(self, project_name: str) -> str:
-        """
-        Removes a project from the Serena configuration.
-
-        :param project_name: Name of the project to remove
-        """
-        self.agent.serena_config.remove_project(project_name)
-        return f"Successfully removed project '{project_name}' from configuration."
-
-
-class SwitchModesTool(Tool):
-    """
-    Activates modes by providing a list of their names
-    """
-
-    def apply(self, modes: list[str]) -> str:
-        """
-        Activates the desired modes, like ["editing", "interactive"] or ["planning", "one-shot"]
-
-        :param modes: the names of the modes to activate
-        """
-        mode_instances = [SerenaAgentMode.load(mode) for mode in modes]
-        self.agent.set_modes(mode_instances)
-
-        # Inform the Agent about the activated modes and the currently active tools
-        result_str = f"Successfully activated modes: {', '.join([mode.name for mode in mode_instances])}" + "\n"
-        result_str += "\n".join([mode_instance.prompt for mode_instance in mode_instances]) + "\n"
-        result_str += f"Currently active tools: {', '.join(self.agent.get_active_tool_names())}"
-        return result_str
-
-
-class GetCurrentConfigTool(Tool):
+class GetCurrentConfigTool(Tool, ToolMarkerDoesNotRequireActiveProject):
     """
     Prints the current configuration of the agent, including the active and available projects, tools, contexts, and modes.
     """

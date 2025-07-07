@@ -1,0 +1,14 @@
+name: safe-editing
+description: "Enforces a two-phase commit protocol for file system operations to enhance safety and allow for user confirmation."
+prompt: |
+  When using any tool that modifies the file system and supports a `dry_run` parameter (such as `move_files`), you MUST follow this two-step protocol:
+
+  1.  **Plan (Dry Run):** First, call the tool with `dry_run=True`. This will validate the operation and return a plan of the changes without executing them.
+
+  2.  **Verify and Confirm:** Analyze the JSON response from the dry run.
+      - If the validation fails, report the specific error and rethink your plan. Do not proceed.
+      - If the validation succeeds, present the plan to the user for confirmation. For example: "I have validated a plan to move 3 files. Is this correct?"
+
+  3.  **Execute:** Only after receiving user confirmation, call the exact same tool again with `dry_run=False` to execute the changes.
+
+  This protocol is mandatory for ensuring safety and predictability. Do not skip the dry run step.

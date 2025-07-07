@@ -520,9 +520,18 @@ class SerenaAgent:
         if project_instance is not None:
             if project_instance.project_config.first_time_setup:
                 log.info("First time setup for project, configuring ignores...")
+                # Run the project ignores configuration tool in suggest mode
+                from serena.tools import ConfigureProjectIgnoresTool
+                ignore_tool = ConfigureProjectIgnoresTool(self)
+                try:
+                    result = ignore_tool.apply_ex(mode="suggest", catch_exceptions=False)
+                    log.info(f"Project ignore configuration result: {result}")
+                except Exception as e:
+                    log.warning(f"Failed to configure project ignores during first-time setup: {e}")
+                
                 project_instance.project_config.first_time_setup = False
                 project_instance.project_config.save(project_instance.project_root)
-                log.info("Please restart Serena for the changes to take effect.")
+                log.info("First-time setup completed. Please restart Serena for the changes to take effect.")
 
         if project_instance is not None:
             log.info(f"Found registered project {project_instance.project_name} at path {project_instance.project_root}.")

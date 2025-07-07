@@ -1324,6 +1324,528 @@ class InitialInstructionsTool(Tool, ToolMarkerDoesNotRequireActiveProject):
         return self.agent.create_system_prompt()
 
 
+class ConfigureProjectIgnoresTool(Tool, ToolMarkerCanEdit):
+    """
+    Configures project ignore patterns for better code analysis and project management.
+    Supports interactive mode for guided configuration, direct mode for batch updates,
+    and suggest mode for technology-aware recommendations.
+    """
+
+    def apply(
+        self,
+        mode: str = "interactive",
+        patterns: list[str] | None = None,
+        enable_gitignore: bool | None = None,
+        preview_only: bool = False,
+    ) -> str:
+        """
+        Configure project ignore patterns to improve code analysis and project management.
+        
+        Supports three modes:
+        - 'interactive': Step-by-step guidance with validation and pattern preview
+        - 'direct': Apply a list of patterns instantly
+        - 'suggest': Auto-detect project technologies and apply recommended patterns
+        
+        :param mode: Operation mode ('interactive', 'direct', or 'suggest')
+        :param patterns: List of ignore patterns (required for 'direct' mode)
+        :param enable_gitignore: Whether to enable gitignore integration (optional override)
+        :param preview_only: If True, shows what would be ignored without making changes
+        :return: Status message with configuration results
+        """
+        try:
+            project = self.agent.get_active_project()
+            if project is None:
+                return "❌ No active project. Please activate a project first."
+            
+            project_root = Path(project.project_root)
+            
+            if mode == "interactive":
+                return self._handle_interactive_mode(project, project_root, enable_gitignore, preview_only)
+            elif mode == "direct":
+                if patterns is None:
+                    return "❌ Direct mode requires 'patterns' parameter with a list of ignore patterns."
+                return self._handle_direct_mode(project, project_root, patterns, enable_gitignore, preview_only)
+            elif mode == "suggest":
+                return self._handle_suggest_mode(project, project_root, enable_gitignore, preview_only)
+            else:
+                return f"❌ Invalid mode '{mode}'. Supported modes: 'interactive', 'direct', 'suggest'"
+                
+        except Exception as e:
+            return f"❌ Error configuring project ignores: {str(e)}"
+
+    def _handle_interactive_mode(
+        self, project: "Project", project_root: Path, enable_gitignore: bool | None, preview_only: bool
+    ) -> str:
+        """Handle interactive mode with step-by-step guidance."""
+        result = []
+        result.append("🔧 **Interactive Project Ignore Configuration**")
+        result.append("")
+        
+        # Show current configuration
+        current_config = self._get_current_config(project)
+        result.append("**Current Configuration:**")
+        result.append(f"• GitIgnore integration: {'✅ Enabled' if current_config['gitignore_enabled'] else '❌ Disabled'}")
+        result.append(f"• Custom ignore patterns: {len(current_config['patterns'])} patterns")
+        if current_config['patterns']:
+            for pattern in current_config['patterns']:
+                result.append(f"  - {pattern}")
+        result.append("")
+        
+        # Detect technologies
+        detected_tech = self._detect_technologies(project_root)
+        if detected_tech:
+            result.append("**Detected Technologies:**")
+            for tech in detected_tech:
+                result.append(f"• {tech}")
+            result.append("")
+        
+        # Show recommendations
+        recommendations = self._get_recommendations(detected_tech)
+        if recommendations:
+            result.append("**Recommended Ignore Patterns:**")
+            for pattern in recommendations:
+                validation = self._validate_pattern(pattern, project_root)
+                status = "✅" if validation['is_safe'] else "⚠️"
+                result.append(f"{status} {pattern}")
+                if validation['warning']:
+                    result.append(f"    Warning: {validation['warning']}")
+            result.append("")
+        
+        # Interactive prompts (placeholder for conversational I/O)
+        result.append("**Next Steps:**")
+        result.append("1. To apply recommended patterns, use: `configure_project_ignores(mode='suggest')`")
+        result.append("2. To add custom patterns, use: `configure_project_ignores(mode='direct', patterns=['your/pattern'])`")
+        result.append("3. To enable GitIgnore integration, use: `configure_project_ignores(mode='direct', enable_gitignore=True)`")
+        
+        return "\n".join(result)
+
+    def _handle_direct_mode(
+        self, project: "Project", project_root: Path, patterns: list[str], enable_gitignore: bool | None, preview_only: bool
+    ) -> str:
+        """Handle direct mode with immediate pattern application."""
+        result = []
+        result.append("🔧 **Direct Project Ignore Configuration**")
+        result.append("")
+        
+        # Validate patterns
+        validation_results = []
+        for pattern in patterns:
+            validation = self._validate_pattern(pattern, project_root)
+            validation_results.append((pattern, validation))
+        
+        # Show validation results
+        result.append("**Pattern Validation:**")
+        for pattern, validation in validation_results:
+            status = "✅" if validation['is_safe'] else "⚠️"
+            result.append(f"{status} {pattern}")
+            if validation['warning']:
+                result.append(f"    Warning: {validation['warning']}")
+        result.append("")
+        
+        # Check if any patterns are unsafe
+        unsafe_patterns = [p for p, v in validation_results if not v['is_safe']]
+        if unsafe_patterns and not preview_only:
+            result.append("❌ **Cannot apply configuration due to unsafe patterns:**")
+            for pattern in unsafe_patterns:
+                result.append(f"• {pattern}")
+            result.append("")
+            result.append("Please review and fix the patterns above, or use `preview_only=True` to see what would be ignored.")
+            return "\n".join(result)
+        
+        # Preview affected files if requested
+        if preview_only or len(patterns) > 0:
+            preview_results = self._preview_ignore_patterns(patterns, project_root)
+            result.append("**Preview of files that would be ignored:**")
+            if preview_results:
+                for pattern, files in preview_results.items():
+                    result.append(f"• Pattern '{pattern}': {len(files)} files")
+                    for file in files[:5]:  # Show first 5 files
+                        result.append(f"  - {file}")
+                    if len(files) > 5:
+                        result.append(f"  ... and {len(files) - 5} more files")
+            else:
+                result.append("• No files would be ignored by the specified patterns")
+            result.append("")
+        
+        # Apply changes if not preview only
+        if not preview_only:
+            success = self._apply_configuration(project, patterns, enable_gitignore)
+            if success:
+                result.append("✅ **Configuration applied successfully!**")
+                result.append("")
+                result.append("**Changes made:**")
+                if patterns:
+                    result.append(f"• Added {len(patterns)} ignore patterns")
+                if enable_gitignore is not None:
+                    status = "enabled" if enable_gitignore else "disabled"
+                    result.append(f"• GitIgnore integration {status}")
+                result.append("")
+                result.append("💡 **Tip:** Restart your language server to apply the changes immediately.")
+            else:
+                result.append("❌ **Failed to apply configuration.** Please check the logs for details.")
+        
+        return "\n".join(result)
+
+    def _handle_suggest_mode(
+        self, project: "Project", project_root: Path, enable_gitignore: bool | None, preview_only: bool
+    ) -> str:
+        """Handle suggest mode with technology-aware recommendations."""
+        result = []
+        result.append("🔧 **Technology-Aware Project Ignore Configuration**")
+        result.append("")
+        
+        # Detect technologies
+        detected_tech = self._detect_technologies(project_root)
+        result.append("**Detected Technologies:**")
+        if detected_tech:
+            for tech in detected_tech:
+                result.append(f"• {tech}")
+        else:
+            result.append("• No specific technologies detected")
+        result.append("")
+        
+        # Get recommendations
+        recommendations = self._get_recommendations(detected_tech)
+        if not recommendations:
+            result.append("**No specific recommendations available.**")
+            result.append("The project appears to be a generic project without specific technology patterns.")
+            return "\n".join(result)
+        
+        result.append("**Recommended Ignore Patterns:**")
+        for pattern in recommendations:
+            validation = self._validate_pattern(pattern, project_root)
+            status = "✅" if validation['is_safe'] else "⚠️"
+            result.append(f"{status} {pattern}")
+            if validation['warning']:
+                result.append(f"    Warning: {validation['warning']}")
+        result.append("")
+        
+        # Preview what would be ignored
+        if recommendations:
+            preview_results = self._preview_ignore_patterns(recommendations, project_root)
+            result.append("**Preview of files that would be ignored:**")
+            if preview_results:
+                total_files = sum(len(files) for files in preview_results.values())
+                result.append(f"• Total files to ignore: {total_files}")
+                for pattern, files in preview_results.items():
+                    if files:
+                        result.append(f"• Pattern '{pattern}': {len(files)} files")
+                        for file in files[:3]:  # Show first 3 files
+                            result.append(f"  - {file}")
+                        if len(files) > 3:
+                            result.append(f"  ... and {len(files) - 3} more files")
+            else:
+                result.append("• No files would be ignored by the recommended patterns")
+            result.append("")
+        
+        # Apply changes if not preview only
+        if not preview_only:
+            success = self._apply_configuration(project, recommendations, enable_gitignore)
+            if success:
+                result.append("✅ **Technology-aware configuration applied successfully!**")
+                result.append("")
+                result.append("**Changes made:**")
+                result.append(f"• Added {len(recommendations)} recommended ignore patterns")
+                if enable_gitignore is not None:
+                    status = "enabled" if enable_gitignore else "disabled"
+                    result.append(f"• GitIgnore integration {status}")
+                result.append("")
+                result.append("💡 **Tip:** Restart your language server to apply the changes immediately.")
+            else:
+                result.append("❌ **Failed to apply configuration.** Please check the logs for details.")
+        
+        return "\n".join(result)
+
+    def _get_current_config(self, project: "Project") -> dict[str, Any]:
+        """Get current project ignore configuration."""
+        return {
+            'gitignore_enabled': project.project_config.ignore_all_files_in_gitignore,
+            'patterns': project.project_config.ignored_paths,
+        }
+
+    def _detect_technologies(self, project_root: Path) -> list[str]:
+        """Detect project technologies based on files and directories."""
+        technologies = []
+        
+        # Check for common files and directories
+        checks = [
+            ('Python', lambda: any(project_root.glob('*.py')) or (project_root / 'requirements.txt').exists() or (project_root / 'pyproject.toml').exists()),
+            ('Node.js', lambda: (project_root / 'package.json').exists() or (project_root / 'node_modules').exists()),
+            ('TypeScript', lambda: any(project_root.glob('*.ts')) or (project_root / 'tsconfig.json').exists()),
+            ('Java', lambda: any(project_root.glob('*.java')) or (project_root / 'pom.xml').exists() or any(project_root.glob('*.gradle'))),
+            ('C#', lambda: any(project_root.glob('*.cs')) or any(project_root.glob('*.sln')) or any(project_root.glob('*.csproj'))),
+            ('Rust', lambda: (project_root / 'Cargo.toml').exists() or any(project_root.glob('*.rs'))),
+            ('Go', lambda: (project_root / 'go.mod').exists() or any(project_root.glob('*.go'))),
+            ('C++', lambda: any(project_root.glob('*.cpp')) or any(project_root.glob('*.hpp')) or any(project_root.glob('*.cc'))),
+            ('Ruby', lambda: any(project_root.glob('*.rb')) or (project_root / 'Gemfile').exists()),
+            ('Docker', lambda: (project_root / 'Dockerfile').exists() or (project_root / 'docker-compose.yml').exists()),
+            ('VS Code', lambda: (project_root / '.vscode').exists()),
+            ('Git', lambda: (project_root / '.git').exists()),
+        ]
+        
+        for tech_name, check_func in checks:
+            try:
+                if check_func():
+                    technologies.append(tech_name)
+            except Exception:
+                # Ignore errors during detection
+                pass
+        
+        return technologies
+
+    def _get_recommendations(self, technologies: list[str]) -> list[str]:
+        """Get recommended ignore patterns based on detected technologies."""
+        recommendations = []
+        
+        # Technology-specific patterns
+        tech_patterns = {
+            'Python': [
+                '__pycache__/**',
+                '*.pyc',
+                '*.pyo',
+                '*.pyd',
+                '.Python',
+                'env/**',
+                'venv/**',
+                '.venv/**',
+                'ENV/**',
+                'env.bak/**',
+                'venv.bak/**',
+                '.pytest_cache/**',
+                '.coverage',
+                'htmlcov/**',
+                'dist/**',
+                'build/**',
+                '*.egg-info/**',
+                '.tox/**',
+                '.mypy_cache/**',
+            ],
+            'Node.js': [
+                'node_modules/**',
+                'npm-debug.log*',
+                'yarn-debug.log*',
+                'yarn-error.log*',
+                '.npm/**',
+                '.yarn/**',
+                'coverage/**',
+                '.nyc_output/**',
+                'dist/**',
+                'build/**',
+            ],
+            'TypeScript': [
+                '*.tsbuildinfo',
+                'dist/**',
+                'build/**',
+                '.tscache/**',
+            ],
+            'Java': [
+                'target/**',
+                '*.class',
+                '*.jar',
+                '*.war',
+                '*.ear',
+                'hs_err_pid*',
+                '.gradle/**',
+                'build/**',
+                'gradle-app.setting',
+                '.gradletasknamecache',
+            ],
+            'C#': [
+                'bin/**',
+                'obj/**',
+                '*.user',
+                '*.userosscache',
+                '*.sln.docstates',
+                '.vs/**',
+                'packages/**',
+                'TestResults/**',
+            ],
+            'Rust': [
+                'target/**',
+                'Cargo.lock',
+                '*.rs.bk',
+                '*.pdb',
+            ],
+            'Go': [
+                'vendor/**',
+                '*.exe',
+                '*.exe~',
+                '*.dll',
+                '*.so',
+                '*.dylib',
+                '*.test',
+                '*.out',
+                'go.work',
+                'go.work.sum',
+            ],
+            'C++': [
+                '*.o',
+                '*.obj',
+                '*.exe',
+                '*.out',
+                '*.app',
+                '*.i*86',
+                '*.x86_64',
+                '*.hex',
+                'CMakeFiles/**',
+                'CMakeCache.txt',
+                'cmake_install.cmake',
+                'Makefile',
+                'build/**',
+            ],
+            'Ruby': [
+                '*.gem',
+                '*.rbc',
+                '/.config',
+                '/coverage/',
+                '/InstalledFiles',
+                '/pkg/',
+                '/spec/reports/',
+                '/spec/examples.txt',
+                '/test/tmp/',
+                '/test/version_tmp/',
+                '/tmp/',
+                '.bundle/**',
+                'vendor/bundle/**',
+                'log/**',
+            ],
+            'Docker': [
+                '.dockerignore',
+                'docker-compose.override.yml',
+            ],
+            'VS Code': [
+                '.vscode/settings.json',
+                '.vscode/launch.json',
+                '.vscode/extensions.json',
+                '.vscode/c_cpp_properties.json',
+            ],
+        }
+        
+        # Add patterns for detected technologies
+        for tech in technologies:
+            if tech in tech_patterns:
+                recommendations.extend(tech_patterns[tech])
+        
+        # Add common patterns
+        common_patterns = [
+            '.DS_Store',
+            'Thumbs.db',
+            '*.tmp',
+            '*.temp',
+            '*.log',
+            '.env',
+            '.env.local',
+            '.env.*.local',
+            '*.orig',
+            '*.swp',
+            '*.swo',
+            '*~',
+        ]
+        
+        # Only add common patterns if we have some technology detected
+        if technologies:
+            recommendations.extend(common_patterns)
+        
+        # Remove duplicates while preserving order
+        seen = set()
+        unique_recommendations = []
+        for pattern in recommendations:
+            if pattern not in seen:
+                seen.add(pattern)
+                unique_recommendations.append(pattern)
+        
+        return unique_recommendations
+
+    def _validate_pattern(self, pattern: str, project_root: Path) -> dict[str, Any]:
+        """Validate an ignore pattern for safety and correctness."""
+        validation = {
+            'is_safe': True,
+            'warning': None,
+        }
+        
+        # Check for dangerous patterns
+        dangerous_patterns = [
+            ('**', "Very broad pattern that might ignore too many files"),
+            ('*', "Very broad pattern that might ignore too many files"),
+            ('/', "Root path pattern might ignore important files"),
+            ('..', "Parent directory references can be dangerous"),
+            ('src/**', "Ignoring source directory might hide important code"),
+            ('lib/**', "Ignoring library directory might hide important code"),
+        ]
+        
+        for dangerous, warning in dangerous_patterns:
+            if pattern.strip() == dangerous:
+                validation['is_safe'] = False
+                validation['warning'] = warning
+                break
+        
+        # Check for common mistakes
+        if pattern.startswith('/'):
+            validation['warning'] = "Leading slash is not needed in gitignore patterns"
+        elif pattern.endswith('/') and not pattern.endswith('/**'):
+            validation['warning'] = "Consider using '/**' for directory patterns"
+        
+        return validation
+
+    def _preview_ignore_patterns(self, patterns: list[str], project_root: Path) -> dict[str, list[str]]:
+        """Preview which files would be ignored by the given patterns."""
+        preview = {}
+        
+        try:
+            # Get all files in the project
+            all_files = []
+            for root, dirs, files in os.walk(project_root):
+                for file in files:
+                    file_path = Path(root) / file
+                    relative_path = file_path.relative_to(project_root)
+                    all_files.append(str(relative_path))
+            
+            # Check each pattern
+            for pattern in patterns:
+                matching_files = []
+                for file_path in all_files:
+                    if self._matches_pattern(file_path, pattern):
+                        matching_files.append(file_path)
+                preview[pattern] = matching_files[:10]  # Limit to first 10 files
+        
+        except Exception:
+            # If preview fails, return empty dict
+            preview = {}
+        
+        return preview
+
+    def _matches_pattern(self, file_path: str, pattern: str) -> bool:
+        """Check if a file path matches an ignore pattern."""
+        # Simple glob-like matching
+        # This is a simplified version - real gitignore matching is more complex
+        try:
+            return fnmatch(file_path, pattern) or fnmatch(file_path, pattern.rstrip('*'))
+        except Exception:
+            return False
+
+    def _apply_configuration(self, project: "Project", patterns: list[str], enable_gitignore: bool | None) -> bool:
+        """Apply the configuration changes to the project."""
+        try:
+            # Update project configuration
+            if patterns:
+                # Add new patterns to existing ones, avoiding duplicates
+                existing_patterns = set(project.project_config.ignored_paths)
+                new_patterns = [p for p in patterns if p not in existing_patterns]
+                if new_patterns:
+                    project.project_config.ignored_paths.extend(new_patterns)
+            
+            if enable_gitignore is not None:
+                project.project_config.ignore_all_files_in_gitignore = enable_gitignore
+            
+            # Save the configuration
+            project.project_config.save(project.project_root)
+            
+            return True
+        except Exception as e:
+            log.error(f"Failed to apply project ignore configuration: {e}")
+            return False
+
+
 def _iter_tool_classes(same_module_only: bool = True) -> Generator[type[Tool], None, None]:
     """
     Iterate over Tool subclasses.

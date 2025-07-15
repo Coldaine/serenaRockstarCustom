@@ -1,0 +1,23 @@
+  feature/wsl-bridge[m
+  feature/wsl-bridge-refactor[m
+  feature/wsl-bridge-refactor-backup[m
+  feature/wsl-bridge-reintegration[m
+* [32mmain[m
+  [31mremotes/origin/HEAD[m -> origin/main
+  [31mremotes/origin/copilot/fix-b7e89fa5-8dce-4739-8514-f4783502c43f[m
+  [31mremotes/origin/feature/wsl-bridge[m
+  [31mremotes/origin/main[m
+  [31mremotes/upstream/HEAD[m -> upstream/main
+  [31mremotes/upstream/codex/add-analytics-to-serena-dashboard[m
+  [31mremotes/upstream/codex/add-diagnostics-tool-with-language-server-support[m
+  [31mremotes/upstream/codex/add-type-hierarchy-tool-with-symbolic-functions[m
+  [31mremotes/upstream/codex/support-multiple-programming-languages-in-serena[m
+  [31mremotes/upstream/develop[m
+  [31mremotes/upstream/diagnostics[m
+  [31mremotes/upstream/feature/new_ts_langserver[m
+  [31mremotes/upstream/improve_clang[m
+  [31mremotes/upstream/jetbrains[m
+  [31mremotes/upstream/main[m
+  [31mremotes/upstream/swe-bench-eval[m
+  [31mremotes/upstream/ts-ls-readiness[m
+  [31mremotes/upstream/watchdog[m

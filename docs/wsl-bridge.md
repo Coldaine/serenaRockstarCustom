@@ -1,18 +1,18 @@
-# Serena WSL Bridge
+# Serena Workspace Isolation Bridge
 
-The WSL Bridge enables fast file access for Serena when running with Claude Code on Windows via WSL.
+The Workspace Isolation Bridge provides dedicated Serena server instances for multiple workspaces to prevent connection conflicts.
 
 ## Problem
 
-When Claude Code (running in WSL) uses Serena to read Unity project files stored on Windows, file access is 10-20x slower due to the WSL filesystem translation layer.
+When multiple Claude Code workspaces (or other MCP clients) try to connect to the same Serena MCP server, connection conflicts and resource contention occur. Each workspace needs its own isolated server instance.
 
 ## Solution
 
-The WSL Bridge acts as a transparent proxy:
-- Claude Code connects to the bridge (running in WSL).
-- The bridge launches Serena on Windows for native file speed.
-- All MCP communication is forwarded transparently.
-- The bridge monitors the Serena process and restarts it if it crashes.
+The Workspace Isolation Bridge acts as a transparent proxy:
+- Each workspace connects to the bridge with a unique workspace ID.
+- The bridge launches a dedicated Serena server instance for each workspace.
+- All MCP communication is forwarded to the appropriate server instance.
+- The bridge manages server lifecycle and prevents resource conflicts.
 
 ## Installation
 
@@ -35,7 +35,7 @@ The WSL Bridge acts as a transparent proxy:
     ```
 
 4.  **Configure Claude Code**
-    Update your Claude Code configuration to use the `serena-wsl-bridge` command. The `configure-claude-code.sh` script can help with this.
+    Update your Claude Code configuration to use the `serena-workspace-isolation-bridge` command. The `configure-claude-code.sh` script can help with this.
 
 ## Configuration
 
@@ -47,12 +47,13 @@ You can also use environment variables to override the settings:
 - `SERENA_BRIDGE_RESTART_COOLDOWN=10`: Cooldown in seconds between restarts.
 - `SERENA_BRIDGE_TRANSLATE_PATHS=0`: Disable path translation.
 
-## Performance
+## Benefits
 
-Typical improvements:
-- Unity .cs file reads: 50ms → 5ms (10x faster)
-- Large YAML files: 200ms → 15ms (13x faster)
-- Project scanning: 30s → 3s (10x faster)
+Key advantages:
+- **Workspace Isolation**: Each workspace gets its own dedicated server instance
+- **No Connection Conflicts**: Multiple workspaces can run simultaneously without interference
+- **Resource Management**: Proper server lifecycle management and cleanup
+- **Scalability**: Support for unlimited concurrent workspaces
 
 ## Troubleshooting
 

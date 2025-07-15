@@ -1,4 +1,4 @@
-"""Test script for WSL Bridge functionality"""
+"""Test script for Workspace Isolation Bridge functionality"""
 
 import subprocess
 import json
@@ -146,7 +146,7 @@ def test_serena_connection():
         os.remove(config_path)
 
 if __name__ == "__main__":
-    print("=== Serena WSL Bridge Test Suite ===\n")
+    print("=== Serena Workspace Isolation Bridge Test Suite ===\n")
     
     tests = [
         ("Windows Execution", test_windows_execution),

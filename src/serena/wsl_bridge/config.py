@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-WSL Bridge Configuration Management
+Workspace Isolation Bridge Configuration Management
 
-Handles loading, saving, and validating configuration for the WSL Bridge.
+Handles loading, saving, and validating configuration for the Workspace Isolation Bridge.
 """
 
 import json
@@ -12,8 +12,8 @@ from typing import Dict, Any, Optional
 import logging
 
 
-class WSLBridgeConfig:
-    """Configuration manager for WSL Bridge"""
+class WorkspaceIsolationBridgeConfig:
+    """Configuration manager for Workspace Isolation Bridge"""
     
     def __init__(self, config_path: Optional[str] = None):
         self.config_path = config_path or self._get_default_config_path()
@@ -23,7 +23,7 @@ class WSLBridgeConfig:
     def _get_default_config_path(self) -> Path:
         """Get the default configuration file path"""
         config_dir = Path.home() / ".config" / "serena"
-        return config_dir / "wsl_bridge.json"
+        return config_dir / "workspace_isolation_bridge.json"
     
     def load(self) -> Dict[str, Any]:
         """Load configuration from file"""

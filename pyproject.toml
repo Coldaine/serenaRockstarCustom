@@ -39,7 +39,7 @@ dependencies = [
 [project.scripts]
 rockstar-serena-mcp-server = "serena.mcp:start_mcp_server"
 serena-mcp-server = "serena.mcp:start_mcp_server"  # Backward compatibility
-serena-wsl-bridge = "serena.wsl_bridge.wrapper:main"  # WSL Bridge entry point
+serena-workspace-isolation-bridge = "serena.wsl_bridge.wrapper:main"  # Workspace Isolation Bridge entry point
 index-project = "serena.agent:index_project"
 
 [project.license]

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-WSL Bridge Performance Metrics
+Workspace Isolation Bridge Performance Metrics
 
-Tracks performance metrics for the WSL Bridge to help optimize and debug
-file access performance improvements.
+Tracks performance metrics for the Workspace Isolation Bridge to help optimize and debug
+server instance management and communication performance.
 """
 
 import time
@@ -15,7 +15,7 @@ import json
 
 
 class BridgeMetrics:
-    """Performance metrics tracker for WSL Bridge"""
+    """Performance metrics tracker for Workspace Isolation Bridge"""
     
     def __init__(self, max_history: int = 1000):
         self.max_history = max_history
@@ -131,7 +131,7 @@ class BridgeMetrics:
         stats = self.get_stats()
         
         summary = []
-        summary.append(f"WSL Bridge Performance Summary")
+        summary.append(f"Workspace Isolation Bridge Performance Summary")
         summary.append(f"==============================")
         summary.append(f"Uptime: {stats['uptime_seconds']:.1f}s")
         summary.append(f"Total Requests: {stats['total_requests']}")

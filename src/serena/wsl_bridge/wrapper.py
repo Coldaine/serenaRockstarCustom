@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-MCP WSL Bridge Wrapper
+MCP Workspace Isolation Bridge Wrapper
 
-A transparent stdio bridge that connects Claude Code (in WSL) to Serena (on Windows)
-for optimal file access performance.
+A transparent stdio bridge that provides isolated Serena server instances
+for multiple workspaces to prevent connection conflicts.
 """
 
 import sys
@@ -18,15 +18,15 @@ from pathlib import Path
 from typing import Dict, Any, Optional
 import logging
 
-from .config import WSLBridgeConfig
+from .config import WorkspaceIsolationBridgeConfig
 from .metrics import BridgeMetrics
 
-from .config import WSLBridgeConfig
+from .config import WorkspaceIsolationBridgeConfig
 from .metrics import BridgeMetrics, MetricsContextManager
 
 
-class MCPWSLBridge:
-    """WSL Bridge that forwards MCP communication between Claude Code and Windows Serena"""
+class MCPWorkspaceIsolationBridge:
+    """Workspace Isolation Bridge that provides dedicated Serena server instances per workspace"""
     
     def __init__(self, config_path: Optional[str] = None, debug: bool = False):
         self.workspace_id = self._generate_workspace_id()
@@ -38,7 +38,7 @@ class MCPWSLBridge:
         self._setup_logging()
         
         # Initialize configuration and metrics
-        self.config_manager = WSLBridgeConfig(config_path)
+        self.config_manager = WorkspaceIsolationBridgeConfig(config_path)
         self.config = self.config_manager.load()
         self.metrics = BridgeMetrics()
         
@@ -52,15 +52,15 @@ class MCPWSLBridge:
     
     def _generate_workspace_id(self):
         """Generate unique ID for this workspace/VS Code instance"""
-        return f"wsl_bridge_{os.getpid()}_{int(time.time())}"
+        return f"workspace_isolation_bridge_{os.getpid()}_{int(time.time())}"
     
     def _get_default_config_path(self):
         """Get the default configuration file path"""
         config_dir = Path.home() / ".config" / "serena"
-        return config_dir / "wsl_bridge.json"
+        return config_dir / "workspace_isolation_bridge.json"
     
     def _load_config(self):
-        """Load WSL Bridge configuration"""
+        Load Workspace Isolation Bridge configuration
         try:
             with open(self.config_path, 'r') as f:
                 config = json.load(f)
@@ -104,7 +104,7 @@ class MCPWSLBridge:
         
         logging.basicConfig(
             level=log_level,
-            format=f'[WSL-Bridge-{self.workspace_id}] %(asctime)s - %(levelname)s - %(message)s',
+            format=f'[WorkspaceIsolationBridge-{self.workspace_id}] %(asctime)s - %(levelname)s - %(message)s',
             handlers=[
                 logging.StreamHandler(sys.stderr),
                 logging.FileHandler(log_file)
@@ -266,7 +266,7 @@ class MCPWSLBridge:
     
     def run(self):
         """Main execution loop"""
-        self._log("Starting MCP WSL Bridge...")
+        self._log("Starting MCP Workspace Isolation Bridge...")
         
         # Start the dedicated MCP server
         if not self._start_dedicated_server():
@@ -317,7 +317,7 @@ class MCPWSLBridge:
         if self.shutdown_event.is_set():
             return  # Already shutting down
             
-        self._log("Shutting down MCP WSL Bridge...")
+        self._log("Shutting down MCP Workspace Isolation Bridge...")
         self.shutdown_event.set()
         
         # Terminate the MCP server
@@ -338,14 +338,14 @@ class MCPWSLBridge:
             except Exception as e:
                 self._log(f"Error terminating server: {e}")
         
-        self._log("MCP WSL Bridge shutdown complete")
+        self._log("MCP Workspace Isolation Bridge shutdown complete")
 
 
 def main():
-    """Entry point for serena-wsl-bridge command"""
+    """Entry point for serena-workspace-isolation-bridge command"""
     import argparse
     
-    parser = argparse.ArgumentParser(description="Serena WSL Bridge - Fast file access for Claude Code")
+    parser = argparse.ArgumentParser(description="Serena Workspace Isolation Bridge - Dedicated server instances per workspace")
     parser.add_argument("-c", "--config", help="Path to configuration file")
     parser.add_argument("-d", "--debug", action="store_true", help="Enable debug logging")
     parser.add_argument("--version", action="version", version="0.1.0")
@@ -353,10 +353,10 @@ def main():
     args = parser.parse_args()
     
     try:
-        bridge = MCPWSLBridge(config_path=args.config, debug=args.debug)
+        bridge = MCPWorkspaceIsolationBridge(config_path=args.config, debug=args.debug)
         bridge.run()
     except Exception as e:
-        print(f"[WSL-Bridge] Fatal error: {e}", file=sys.stderr)
+        print(f"[WorkspaceIsolationBridge] Fatal error: {e}", file=sys.stderr)
         sys.exit(1)
 
 

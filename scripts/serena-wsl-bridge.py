@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Serena WSL Bridge - MCP Stdio Wrapper
+Serena Workspace Isolation Bridge - MCP Stdio Wrapper
 
-Bridges Claude Code (running in WSL) to Serena (running on Windows) for fast file access.
-Each Claude Code workspace gets its own dedicated Serena server instance.
+Provides isolated Serena server instances for multiple workspaces/clients.
+Each workspace gets its own dedicated Serena server instance to prevent conflicts.
 
 Usage:
     python serena_wsl_bridge.py [--debug] [--config path/to/config.json]
@@ -38,8 +38,8 @@ import tempfile
 
 import tempfile
 
-class SerenaWSLBridge:
-    """WSL to Windows bridge for Serena MCP server"""
+class SerenaWorkspaceIsolationBridge:
+    """Workspace isolation bridge for Serena MCP server - provides dedicated server instances per workspace"""
     
     def __init__(self, config_path: Optional[Path] = None, debug: bool = False):
         self.workspace_id = self._generate_workspace_id()
@@ -427,7 +427,7 @@ class SerenaWSLBridge:
     
     def run(self):
         """Main execution loop"""
-        self._log("Serena WSL Bridge starting...")
+        self._log("Serena Workspace Isolation Bridge starting...")
         self._log(f"Configuration: {self.config_path}")
         self._log(f"Settings: debug={self.debug_mode}, max_restarts={self.max_restarts}, translate_paths={self.translate_paths}")
         
@@ -466,7 +466,7 @@ class SerenaWSLBridge:
         if self.shutdown_event.is_set():
             return
         
-        self._log("Shutting down Serena WSL Bridge...")
+        self._log("Shutting down Serena Workspace Isolation Bridge...")
         self.shutdown_event.set()
         
         # Log final statistics
@@ -503,7 +503,7 @@ class SerenaWSLBridge:
 def main():
     """Entry point"""
     parser = argparse.ArgumentParser(
-        description="Serena WSL Bridge - Fast Windows file access for Claude Code"
+        description="Serena Workspace Isolation Bridge - Dedicated server instances per workspace"
     )
     parser.add_argument(
         '-c', '--config',
@@ -519,10 +519,10 @@ def main():
     args = parser.parse_args()
     
     try:
-        bridge = SerenaWSLBridge(config_path=args.config, debug=args.debug)
+        bridge = SerenaWorkspaceIsolationBridge(config_path=args.config, debug=args.debug)
         bridge.run()
     except Exception as e:
-        print(f"[SerenaWSLBridge] Fatal error: {e}", file=sys.stderr)
+        print(f"[SerenaWorkspaceIsolationBridge] Fatal error: {e}", file=sys.stderr)
         sys.exit(1)
 
 

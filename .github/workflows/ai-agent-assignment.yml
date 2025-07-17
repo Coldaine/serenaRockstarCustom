@@ -1,0 +1,116 @@
+name: AI Agent Assignment
+
+on:
+  pull_request:
+    types: [opened, labeled]
+  issue_comment:
+    types: [created]
+
+jobs:
+  assign-ai-agent:
+    runs-on: ubuntu-latest
+    if: |
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ai-implement')) ||
+      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '/ai-implement'))
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Parse AI Model Request
+        id: parse_model
+        run: |
+          # Default to Claude Sonnet
+          MODEL="claude-3-5-sonnet-20241022"
+          
+          # Check PR labels for model specification
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            LABELS="${{ join(github.event.pull_request.labels.*.name, ' ') }}"
+            if [[ "$LABELS" == *"ai-model:gemini"* ]]; then
+              MODEL="gemini-1.5-pro-002"
+            elif [[ "$LABELS" == *"ai-model:gpt4"* ]]; then
+              MODEL="gpt-4o-2024-11-20"
+            elif [[ "$LABELS" == *"ai-model:claude"* ]]; then
+              MODEL="claude-3-5-sonnet-20241022"
+            fi
+          fi
+          
+          # Check comment for model specification
+          if [[ "${{ github.event_name }}" == "issue_comment" ]]; then
+            COMMENT="${{ github.event.comment.body }}"
+            if [[ "$COMMENT" == *"gemini"* ]]; then
+              MODEL="gemini-1.5-pro-002"
+            elif [[ "$COMMENT" == *"gpt4"* ]]; then
+              MODEL="gpt-4o-2024-11-20"
+            elif [[ "$COMMENT" == *"claude"* ]]; then
+              MODEL="claude-3-5-sonnet-20241022"
+            fi
+          fi
+          
+          echo "model=$MODEL" >> $GITHUB_OUTPUT
+          echo "Selected AI Model: $MODEL"
+      
+      - name: Create AI Implementation Issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const model = "${{ steps.parse_model.outputs.model }}";
+            const prNumber = context.payload.pull_request?.number || context.issue.number;
+            const prTitle = context.payload.pull_request?.title || "Implementation Request";
+            
+            const issueBody = `
+            ## 🤖 AI Implementation Request
+            
+            **Assigned Model:** \`${model}\`
+            **Source PR:** #${prNumber}
+            **Implementation Plan:** See \`instance_manager_plan.md\` in the PR
+            
+            ### Task Overview
+            Implement the Serena Instance Manager pattern to replace the current Workspace Isolation Bridge with a simpler, more robust architecture.
+            
+            ### Key Files to Implement:
+            1. **Modify:** \`src/serena/mcp.py\` - Add \`--port-file\` option
+            2. **Create:** \`scripts/instance_manager.py\` - Core instance manager service
+            3. **Create:** Integration tests and validation scripts
+            
+            ### Implementation Requirements:
+            - Follow the detailed plan in \`instance_manager_plan.md\`
+            - Maintain backward compatibility where possible
+            - Include comprehensive testing (unit + integration)
+            - Update documentation and configuration examples
+            
+            ### Success Criteria:
+            - [ ] Port file reporting functionality added to MCP server
+            - [ ] Instance manager service implemented with Flask API
+            - [ ] Session lifecycle management (request/release) working
+            - [ ] Integration tests passing
+            - [ ] Manual testing with curl commands successful
+            
+            ### Model-Specific Instructions:
+            ${model.includes('claude') ? '**Claude Sonnet:** Focus on robust error handling and clean architecture patterns.' : ''}
+            ${model.includes('gemini') ? '**Gemini Pro:** Emphasize comprehensive testing and documentation.' : ''}
+            ${model.includes('gpt') ? '**GPT-4:** Prioritize code quality and maintainability.' : ''}
+            
+            ---
+            *This issue was automatically created for AI implementation. The assigned model will implement the solution according to the detailed plan.*
+            `;
+            
+            const issue = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `🤖 [${model}] Implement Instance Manager Pattern - ${prTitle}`,
+              body: issueBody,
+              labels: ['ai-implementation', 'enhancement', `model:${model.split('-')[0]}`]
+            });
+            
+            // Comment on the original PR
+            if (context.payload.pull_request) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                body: `🤖 **AI Implementation Assigned**\n\nModel: \`${model}\`\nTracking Issue: #${issue.data.number}\n\nThe AI agent will implement the Instance Manager pattern according to the detailed plan in this PR.`
+              });
+            }
+            
+            return issue.data.number;

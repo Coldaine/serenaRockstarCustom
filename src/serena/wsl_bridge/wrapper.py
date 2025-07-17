@@ -21,9 +21,6 @@ import logging
 from .config import WorkspaceIsolationBridgeConfig
 from .metrics import BridgeMetrics
 
-from .config import WorkspaceIsolationBridgeConfig
-from .metrics import BridgeMetrics, MetricsContextManager
-
 
 class MCPWorkspaceIsolationBridge:
     """Workspace Isolation Bridge that provides dedicated Serena server instances per workspace"""
@@ -60,7 +57,7 @@ class MCPWorkspaceIsolationBridge:
         return config_dir / "workspace_isolation_bridge.json"
     
     def _load_config(self):
-        Load Workspace Isolation Bridge configuration
+        """Load Workspace Isolation Bridge configuration"""
         try:
             with open(self.config_path, 'r') as f:
                 config = json.load(f)
@@ -95,12 +92,15 @@ class MCPWorkspaceIsolationBridge:
         }
     
     def _setup_logging(self):
-        """Setup logging for the bridge"""
+        """Setup enhanced logging for the bridge with activity tracking"""
         log_level = logging.DEBUG if self.debug else logging.INFO
         
         # Use Windows-compatible temp directory
         import tempfile
         log_file = os.path.join(tempfile.gettempdir(), f'serena_bridge_{self.workspace_id}.log')
+        
+        # Setup activity tracking log (shared across all bridges for monitoring)
+        self.activity_log_file = os.path.join(tempfile.gettempdir(), 'workspace_isolation_bridge_activity.log')
         
         logging.basicConfig(
             level=log_level,
@@ -111,10 +111,43 @@ class MCPWorkspaceIsolationBridge:
             ]
         )
         self.logger = logging.getLogger(__name__)
+        
+        # Log bridge startup to activity tracker (after logging is ready)
+        self._log_activity("BRIDGE_START", {
+            "workspace_id": self.workspace_id,
+            "pid": os.getpid(),
+            "debug_mode": self.debug,
+            "log_file": log_file
+        })
     
     def _log(self, message):
         """Log to stderr and file (VS Code can see this in MCP server output)"""
         self.logger.info(message)
+    
+    def _log_activity(self, event_type: str, data: Dict[str, Any]):
+        """Log activity to shared activity tracker for monitoring multiple bridges"""
+        # Fail silently if activity logging isn't available - don't break core functionality
+        if not hasattr(self, 'activity_log_file') or not self.activity_log_file:
+            return
+            
+        try:
+            activity_entry = {
+                "timestamp": time.time(),
+                "iso_timestamp": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
+                "event_type": event_type,
+                "workspace_id": self.workspace_id,
+                "data": data
+            }
+            
+            # Append to activity log file (thread-safe)
+            with open(self.activity_log_file, 'a', encoding='utf-8') as f:
+                f.write(json.dumps(activity_entry) + '\n')
+                f.flush()
+                
+        except Exception:
+            # Fail silently - activity logging is optional and shouldn't break the bridge
+            # Don't call self._log() here to avoid circular dependency during initialization
+            pass
     
     def _signal_handler(self, signum, frame):
         """Handle shutdown signals"""
@@ -177,6 +210,15 @@ class MCPWorkspaceIsolationBridge:
                 return False
             
             self._log(f"Successfully started {server_name} server (PID: {self.server_process.pid})")
+            
+            # Log server start to activity tracker
+            self._log_activity("SERVER_START", {
+                "server_name": server_name,
+                "server_pid": self.server_process.pid,
+                "command": server_config['command'],
+                "args": server_config['args']
+            })
+            
             return True
             
         except Exception as e:
@@ -266,6 +308,7 @@ class MCPWorkspaceIsolationBridge:
     
     def run(self):
         """Main execution loop"""
+        self._start_time = time.time()  # Track start time for uptime calculation
         self._log("Starting MCP Workspace Isolation Bridge...")
         
         # Start the dedicated MCP server
@@ -319,6 +362,12 @@ class MCPWorkspaceIsolationBridge:
             
         self._log("Shutting down MCP Workspace Isolation Bridge...")
         self.shutdown_event.set()
+        
+        # Log shutdown to activity tracker
+        self._log_activity("BRIDGE_SHUTDOWN", {
+            "server_pid": self.server_process.pid if self.server_process else None,
+            "uptime_seconds": time.time() - getattr(self, '_start_time', time.time())
+        })
         
         # Terminate the MCP server
         if self.server_process and self.server_process.poll() is None:

@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "serena": {
+      "command": "uv",
+      "args": [
+        "run", 
+        "--directory", 
+        "E:\\_ProjectBroadside\\serena", 
+        "serena-mcp-server",
+        "--context",
+        "ide-assistant",
+        "--tool-timeout",
+        "20"
+      ],
+      "disabled": false,
+      "autoApprove": []
+    }
+  }
+}

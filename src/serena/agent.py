@@ -43,7 +43,7 @@ log = logging.getLogger(__name__)
 TTool = TypeVar("TTool", bound="Tool")
 T = TypeVar("T")
 SUCCESS_RESULT = "OK"
-DEFAULT_TOOL_TIMEOUT: float = 240
+DEFAULT_TOOL_TIMEOUT: float = 20
 
 
 class ProjectNotFoundError(Exception):
@@ -120,7 +120,7 @@ class MemoriesManagerMDFilesInProject(MemoriesManager):
 def create_ls_for_project(
     project: str | Project,
     log_level: int = logging.INFO,
-    ls_timeout: float | None = DEFAULT_TOOL_TIMEOUT - 5,
+    ls_timeout: float | None = max(60, DEFAULT_TOOL_TIMEOUT * 3),
     trace_lsp_communication: bool = False,
 ) -> SolidLanguageServer:
     """
@@ -288,7 +288,7 @@ class SerenaAgent:
         self._modes = modes
 
         # log tool information
-        log.info(f"Loaded tools ({len(self._all_tools)}): {', '.join([tool.get_name_from_cls() for tool in self._all_tools.values()])}")
+        log.debug(f"Loaded tools ({len(self._all_tools)}): {', '.join([tool.get_name_from_cls() for tool in self._all_tools.values()])}")
         log.info(f"Number of exposed tools given {self._context}: {len(self._exposed_tools)}")
 
         self._active_tools: dict[type[Tool], Tool] = {}
@@ -415,14 +415,14 @@ class SerenaAgent:
         for mode in self._modes:
             mode_excluded_tool_classes = mode.get_excluded_tool_classes()
             if len(mode_excluded_tool_classes) > 0:
-                log.info(
+                log.debug(
                     f"Mode {mode.name} excluded {len(mode_excluded_tool_classes)} tools: {', '.join([tool.get_name_from_cls() for tool in mode_excluded_tool_classes])}"
                 )
                 excluded_tool_classes.update(mode_excluded_tool_classes)
         # context
         context_excluded_tool_classes = self._context.get_excluded_tool_classes()
         if len(context_excluded_tool_classes) > 0:
-            log.info(
+            log.debug(
                 f"Context {self._context.name} excluded {len(context_excluded_tool_classes)} tools: {', '.join([tool.get_name_from_cls() for tool in context_excluded_tool_classes])}"
             )
             excluded_tool_classes.update(context_excluded_tool_classes)
@@ -430,7 +430,7 @@ class SerenaAgent:
         if self._active_project is not None:
             project_excluded_tool_classes = self._active_project.project_config.get_excluded_tool_classes()
             if len(project_excluded_tool_classes) > 0:
-                log.info(
+                log.debug(
                     f"Project {self._active_project.project_name} excluded {len(project_excluded_tool_classes)} tools: {', '.join([tool.get_name_from_cls() for tool in project_excluded_tool_classes])}"
                 )
                 excluded_tool_classes.update(project_excluded_tool_classes)
@@ -443,7 +443,7 @@ class SerenaAgent:
             tool_class: tool_instance for tool_class, tool_instance in self._all_tools.items() if tool_class not in excluded_tool_classes
         }
 
-        log.info(f"Active tools after all exclusions ({len(self._active_tools)}): {', '.join(self.get_active_tool_names())}")
+        log.debug(f"Active tools after all exclusions ({len(self._active_tools)}): {', '.join(self.get_active_tool_names())}")
 
     def issue_task(self, task: Callable[[], Any], name: str | None = None) -> Future:
         """
@@ -622,7 +622,7 @@ class SerenaAgent:
         else:
             if tool_timeout < 10:
                 raise ValueError(f"Tool timeout must be at least 10 seconds, but is {tool_timeout} seconds")
-            ls_timeout = tool_timeout - 5  # the LS timeout is for a single call, it should be smaller than the tool timeout
+            ls_timeout = max(60, tool_timeout * 3)  # Language servers need time to index, give them at least 60s or 3x tool timeout
 
         # stop the language server if it is running
         if self.is_language_server_running():

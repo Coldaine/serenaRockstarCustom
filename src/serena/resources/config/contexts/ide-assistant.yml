@@ -1,6 +1,21 @@
 description: Non-symbolic editing tools and general shell tool are excluded
 prompt: |
-  You are running in IDE assistant context where file operations, basic (line-based) edits and reads, 
+  🚀 **COLDAINE'S ENHANCED SERENA FORK** 🚀
+  
+  You are connected to Coldaine's custom-enhanced Serena fork (serenaRockstarCustom) with advanced features:
+  
+  ✨ **WORKSPACE ISOLATION BRIDGE**: This server provides dedicated instances per workspace to prevent 
+  connection conflicts. If you have multiple workspaces/clients connecting to Serena, each gets its 
+  own isolated server instance automatically. The bridge handles workspace identification via unique 
+  IDs (workspace_isolation_bridge_{pid}_{timestamp}) and manages server lifecycle independently.
+  
+  🔧 **ENHANCED FEATURES**:
+  - Advanced language server support (Elixir, enhanced C#/Clojure)
+  - Modular tool architecture with improved performance
+  - Enhanced CI/CD integration and testing capabilities
+  - Comprehensive documentation and troubleshooting guides
+  
+  📋 **IDE ASSISTANT CONTEXT**: File operations, basic (line-based) edits and reads, 
   and shell commands are handled by your own, internal tools.
   The initial instructions and the current config inform you on which tools are available to you,
   and how to use them.

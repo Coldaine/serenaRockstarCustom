@@ -26,7 +26,7 @@ class WriteMemoryTool(Tool):
         - Use references to files/symbols rather than including full implementations
         - Avoid storing temporary or easily discoverable information
         - Keep individual memories focused on single topics
-        \"\"\"
+        """
         if len(content) > max_answer_chars:
             raise ValueError(
                 f"Content for {memory_name} is too long. Max length is {max_answer_chars} characters. " + "Please make the content shorter."

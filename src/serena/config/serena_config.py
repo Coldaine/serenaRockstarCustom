@@ -32,7 +32,7 @@ if TYPE_CHECKING:
 
 log = logging.getLogger(__name__)
 T = TypeVar("T")
-DEFAULT_TOOL_TIMEOUT: float = 240
+DEFAULT_TOOL_TIMEOUT: float = 20
 
 
 class SerenaConfigError(Exception):

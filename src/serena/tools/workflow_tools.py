@@ -23,10 +23,9 @@ class CheckOnboardingPerformedTool(Tool):
 
         list_memories_tool = self.agent.get_tool(ListMemoriesTool)
         memories = json.loads(list_memories_tool.apply())
-        if len(memories) ==.
-..
-        """
-        return self.prompt_factory.create_prepare_for_new_conversation()
+        if len(memories) == 0:
+            return "No onboarding has been performed yet. Please run the onboarding tool first."
+        return "Onboarding has been performed. Memories are available."
 
 
 class InitialInstructionsTool(Tool, ToolMarkerDoesNotRequireActiveProject):

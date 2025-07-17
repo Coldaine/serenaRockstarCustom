@@ -20,8 +20,8 @@ jobs:
       - name: Parse AI Model Request
         id: parse_model
         run: |
-          # Default to Claude Sonnet
-          MODEL="claude-3-5-sonnet-20241022"
+          # Default to Claude Sonnet 4 (latest)
+          MODEL="claude-3-5-sonnet-4"
           
           # Check PR labels for model specification
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
@@ -31,7 +31,7 @@ jobs:
             elif [[ "$LABELS" == *"ai-model:gpt4"* ]]; then
               MODEL="gpt-4o-2024-11-20"
             elif [[ "$LABELS" == *"ai-model:claude"* ]]; then
-              MODEL="claude-3-5-sonnet-20241022"
+              MODEL="claude-3-5-sonnet-4"
             fi
           fi
           
@@ -43,7 +43,7 @@ jobs:
             elif [[ "$COMMENT" == *"gpt4"* ]]; then
               MODEL="gpt-4o-2024-11-20"
             elif [[ "$COMMENT" == *"claude"* ]]; then
-              MODEL="claude-3-5-sonnet-20241022"
+              MODEL="claude-3-5-sonnet-4"
             fi
           fi
           

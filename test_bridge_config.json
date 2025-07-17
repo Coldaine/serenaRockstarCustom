@@ -12,16 +12,15 @@
         "--tool-timeout",
         "20"
       ],
-      "disabled": false,
-      "autoApprove": [
-        "replace_regex",
-        "get_current_config",
-        "list_dir",
-        "initial_instructions",
-        "restart_language_server",
-        "find_symbol",
-        "search_for_pattern"
-      ]
+      "env": {
+        "SERENA_LOG_LEVEL": "INFO"
+      }
     }
+  },
+  "bridge": {
+    "debug": true,
+    "max_restarts": 3,
+    "restart_cooldown": 10,
+    "translate_paths": true
   }
 }

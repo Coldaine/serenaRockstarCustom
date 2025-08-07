@@ -293,13 +293,6 @@ PROJECT_TYPE = ProjectType()
     help="Port to bind to (for SSE transport).",
 )
 @click.option(
-    "--port-file",
-    "port_file",
-    type=click.Path(),
-    default=None,
-    help="If specified, write the chosen port to this file after the server starts.",
-)
-@click.option(
     "--enable-web-dashboard",
     type=bool,
     is_flag=False,
@@ -341,7 +334,6 @@ def start_mcp_server(
     transport: Literal["stdio", "sse"] = "stdio",
     host: str = "0.0.0.0",
     port: int = 8000,
-    port_file: str | None = None,
     enable_web_dashboard: bool | None = None,
     enable_gui_log_window: bool | None = None,
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] | None = None,
@@ -370,16 +362,6 @@ def start_mcp_server(
         tool_timeout=tool_timeout,
     )
 
-    # After the server is created but before it runs, we can get the final port.
-    # The server object will have the actual port if 'port=0' was used.
-    actual_port = mcp_server.settings.port
-    if port_file:
-        try:
-            Path(port_file).write_text(str(actual_port))
-            log.info(f"Wrote server port {actual_port} to {port_file}")
-        except Exception as e:
-            log.error(f"Failed to write port to {port_file}: {e}")
-
     # log after server creation such that the log appears in the GUI
     if project_file_arg is not None:
         log.warning(
@@ -388,7 +370,7 @@ def start_mcp_server(
             f"Used path: {project_file}"
         )
 
-    log.info(f"Starting MCP server on port {actual_port}...")
+    log.info("Starting MCP server ...")
 
     mcp_server.run(transport=transport)
 

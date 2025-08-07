@@ -20,7 +20,8 @@
         "initial_instructions",
         "restart_language_server",
         "find_symbol",
-        "search_for_pattern"
+        "search_for_pattern",
+        "move_paths"
       ]
     }
   }
